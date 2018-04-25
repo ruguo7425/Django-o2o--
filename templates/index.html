@@ -30,14 +30,14 @@
     <div class="center_con clearfix">
         <ul class="subnav fl">
             {% for c in categories %}
-            <li><a href="#model0{{ forloop.counter }}"
-                   class="{{ c.logo }}">{{ c.name }}</a></li>
+                <li><a href="#model0{{ forloop.counter }}"
+                       class="{{ c.logo }}">{{ c.name }}</a></li>
             {% endfor %}
         </ul>
         <div class="slide fl">
             <ul class="slide_pics">
                 {% for sku in slide_skus %}
-                <li><img src="{{ sku.image.url }}" alt="幻灯片"></li>
+                    <a href={% url 'goods:detail' sku.id %}><li><img src="{{ sku.image.url }}" alt="幻灯片"></li></a>
                 {% endfor %}
 
             </ul>
@@ -47,42 +47,42 @@
         </div>
         <div class="adv fl">
             {% for p in promotions %}
-            <a href="#"><img src="{{ p.image.url }}"></a>
+                <img src="{{ p.image.url }}">
             {% endfor %}
 
         </div>
     </div>
 
     {% for category in categories %}
-    <div class="list_model">
-        <div class="list_title clearfix">
-            <h3 class="fl" id="model01">{{ category.name }}</h3>
-            <div class="subtitle fl">
-                <span>|</span>
+        <div class="list_model">
+            <div class="list_title clearfix">
+                <h3 class="fl" id="model01">{{ category.name }}</h3>
+                <div class="subtitle fl">
+                    <span>|</span>
 
-                {% for c_sku in category.text_skus %}
-                    <a href="#">{{ c_sku.sku.name }}</a>
-                {% endfor %}
+                    {% for c_sku in category.text_skus %}
+                        <a href={% url 'goods:detail' c_sku.sku.id %}>>{{ c_sku.sku.name }}</a>
+                    {% endfor %}
 
+                </div>
+                <a href="#" class="goods_more fr" id="fruit_more">查看更多 ></a>
             </div>
-            <a href="#" class="goods_more fr" id="fruit_more">查看更多 ></a>
+
+            <div class="goods_con clearfix">
+                <div class="goods_banner fl"><img src="{{ category.image.url }}"></div>
+                <ul class="goods_list fl">
+                    {# 列表图 #}
+                    {% for c_sku in category.img_skus %}
+                        <li>
+                            <h4><a href={% url 'goods:detail' c_sku.sku.id %}>{{ c_sku.sku.name }}</a></h4>
+                            <a href={% url 'goods:detail' c_sku.sku.id %}><img src="{{ c_sku.sku.default_image.url }}"></a>
+                            <div class="prize">¥ {{ c_sku.sku.price }}</div>
+                        </li>
+                    {% endfor %}
+
+                </ul>
+            </div>
         </div>
-
-        <div class="goods_con clearfix">
-            <div class="goods_banner fl"><img src="{{ category.image.url }}"></div>
-            <ul class="goods_list fl">
-
-                {% for c_sku in category.img_skus %}
-                <li>
-                    <h4><a href="#">{{ c_sku.sku.name }}</a></h4>
-                    <a href="#"><img src="{{ c_sku.sku.default_image.url }}"></a>
-                    <div class="prize">¥ {{ c_sku.sku.price }}</div>
-                </li>
-                {% endfor %}
-
-            </ul>
-        </div>
-    </div>
     {% endfor %}
 {% endblock %}
 
