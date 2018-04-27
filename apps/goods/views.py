@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect
 from django.views.generic import View
@@ -128,3 +129,69 @@ class DetailView(BaseCartView):
 
         # 响应请求,返回html界面
         return render(request, 'detail.html', context)
+
+
+class ListView(BaseCartView):
+    """商品列表"""
+
+    def get(self, request, category_id, page_num):
+
+        # 获取sort参数:如果用户不传，就是默认的排序规则
+        sort = request.GET.get('sort', 'default')
+        # 校验参数
+        # 判断category_id是否正确，通过异常来判断
+        try:
+            category = GoodsCategory.objects.get(id=category_id)
+        except GoodsCategory.DoesNotExist:
+            return redirect(reverse('goods:index'))
+
+        # 查询商品所有类别
+        categories = GoodsCategory.objects.all()
+
+        # 查询该类别商品新品推荐
+        new_skus = GoodsSKU.objects.filter(
+            category=category).order_by('-create_time')[0:2]
+
+        # 查询该类别所有商品SKU信息：按照排序规则来查询
+        if sort == 'price':
+            # 按照价格由低到高
+            skus = GoodsSKU.objects.filter(category=category).order_by('price')
+        elif sort == 'hot':
+            # 按照销量由高到低
+            skus = GoodsSKU.objects.filter(category=category).order_by('-sales')
+        else:
+            skus = GoodsSKU.objects.filter(category=category)
+            # 无论用户是否传入或者传入其他的排序规则，我在这里都重置成'default'
+            sort = 'default'
+
+        # 分页：需要知道从第几页展示
+        page_num = int(page_num)
+
+        # 创建分页器：每页2条记录
+        paginator = Paginator(skus, 5)
+        try:
+            # 获取分页数据
+            page = paginator.page(page_num)
+        except EmptyPage:
+            # 如果page_num不正确，默认给用户显示第一页数据
+            page = paginator.page(1)
+
+        # 获取页数列表
+        page_list = paginator.page_range
+
+        # 购物车商品数量
+        cart_count = self.get_cart_count(request)
+
+        # 构造上下文
+        context = {
+            'category': category,
+            'categories': categories,
+            'page': page,
+            'new_skus': new_skus,
+            'page_list': page_list,
+            'cart_count': cart_count,
+            'sort': sort,
+        }
+
+        # 渲染模板
+        return render(request, 'list.html', context)

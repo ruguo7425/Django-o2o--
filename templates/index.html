@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block body %}
-
+    {# BODY头部 #}
     <div class="navbar_con">
         <div class="navbar">
             <h1 class="fl">全部商品分类</h1>
@@ -28,16 +28,22 @@
     </div>
 
     <div class="center_con clearfix">
+        {# 全部商品分类 #}
         <ul class="subnav fl">
             {% for c in categories %}
-                <li><a href="#model0{{ forloop.counter }}"
+                <li><a href="{% url 'goods:list' c.id 1 %}"
                        class="{{ c.logo }}">{{ c.name }}</a></li>
             {% endfor %}
         </ul>
+
+
+        {# 轮播图 #}
         <div class="slide fl">
             <ul class="slide_pics">
                 {% for sku in slide_skus %}
-                    <a href={% url 'goods:detail' sku.id %}><li><img src="{{ sku.image.url }}" alt="幻灯片"></li></a>
+                    <a href={% url 'goods:detail' sku.id %}>
+                        <li><img src="{{ sku.image.url }}" alt="幻灯片"></li>
+                    </a>
                 {% endfor %}
 
             </ul>
@@ -52,26 +58,26 @@
 
         </div>
     </div>
-
+    {# 全部列表图片 #}
     {% for category in categories %}
         <div class="list_model">
             <div class="list_title clearfix">
+                {# 列表分类名字 #}
                 <h3 class="fl" id="model01">{{ category.name }}</h3>
+                {# 列表上面的文字 #}
                 <div class="subtitle fl">
                     <span>|</span>
-
                     {% for c_sku in category.text_skus %}
                         <a href={% url 'goods:detail' c_sku.sku.id %}>>{{ c_sku.sku.name }}</a>
                     {% endfor %}
-
                 </div>
-                <a href="#" class="goods_more fr" id="fruit_more">查看更多 ></a>
+                {# 查看更多列表标签 #}
+                <a href="{% url 'goods:list' category.id 1 %}" class="goods_more fr" id="fruit_more">查看更多 ></a>
             </div>
-
+            {# 列表图 #}
             <div class="goods_con clearfix">
                 <div class="goods_banner fl"><img src="{{ category.image.url }}"></div>
                 <ul class="goods_list fl">
-                    {# 列表图 #}
                     {% for c_sku in category.img_skus %}
                         <li>
                             <h4><a href={% url 'goods:detail' c_sku.sku.id %}>{{ c_sku.sku.name }}</a></h4>

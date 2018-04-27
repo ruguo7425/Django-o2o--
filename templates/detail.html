@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block title %}
     天天生鲜-商品详情
 {% endblock %}
@@ -10,11 +9,13 @@
             <div class="subnav_con fl">
                 <h1>全部商品分类</h1>
                 <span></span>
-                <ul class="subnav">
+                 <ul class="subnav">
 
-                    {# 显示所有类别 #}
+                    {# 显示所有的类别 #}
                     {% for category in categories %}
-                        <li><a href="#" class="{{ category.logo }}">{{ category.name }}</a></li>
+                        {# 默认跳转到某个分类商品列表的第一页 #}
+                        <li><a href="{% url 'goods:list' category.id 1 %}"
+                               class="{{ category.logo }}">{{ category.name }}</a></li>
                     {% endfor %}
 
                 </ul>
@@ -30,11 +31,11 @@
     </div>
 
     <div class="breadcrumb">
-        <a href="#">全部分类</a>
+        <a href="{% url 'goods:index' %}">全部分类</a>
         <span>></span>
-        <a href="#">新鲜水果</a>
+        <a href="/list/1/1">新鲜水果</a>
         <span>></span>
-        <a href="#">商品详情</a>
+        商品详情
     </div>
 
     <div class="goods_detail_con clearfix">
@@ -114,10 +115,9 @@
 {% endblock %}
 
 {% block bottom_js %}
+    <script type="text/javascript" src="js/jquery-1.12.2.js"></script>
 
     <div class="add_jump"></div>
-
-    <script type="text/javascript" src="js/jquery-1.12.2.js"></script>
     <script type="text/javascript">
         var $add_x = $('#add_cart').offset().top;
         var $add_y = $('#add_cart').offset().left;
@@ -139,4 +139,5 @@
                 });
         })
     </script>
+
 {% endblock %}
