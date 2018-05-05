@@ -1,4 +1,6 @@
 from django.db import models
+
+from django.db import models
 from apps.goods.models import GoodsSKU
 from apps.users.models import User, Address
 from utils.models import BaseModel
@@ -37,6 +39,7 @@ class OrderInfo(BaseModel):
         (5, "已完成"),
     )
 
+    # 指定了primary_key后，就不会生成默认的ｉｄ主键
     order_id = models.CharField(max_length=64,
                                 primary_key=True,
                                 verbose_name="订单号")
@@ -50,15 +53,12 @@ class OrderInfo(BaseModel):
     status = models.SmallIntegerField(choices=ORDER_STATUS_CHOICES,
                                       default=1, verbose_name="订单状态")
     trade_no = models.CharField(max_length=100, default='',
-                                unique=True, null=True,
-                                blank=True, verbose_name="支付编号")
+                                null=True, blank=True, verbose_name="支付编号")
     user = models.ForeignKey(User, verbose_name="下单用户")
     address = models.ForeignKey(Address, verbose_name="收货地址")
 
     class Meta:
         db_table = "df_order_info"
-        verbose_name = "订单信息"
-        verbose_name_plural = verbose_name
 
 
 class OrderGoods(BaseModel):
@@ -72,5 +72,3 @@ class OrderGoods(BaseModel):
 
     class Meta:
         db_table = "df_order_goods"
-        verbose_name = "订单商品"
-        verbose_name_plural = verbose_name

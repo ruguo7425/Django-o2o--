@@ -24,10 +24,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '-7m$aw5&@aki01t3v-j^g&vi8gt3bu(*(z+(hul3wbs#w1$!h7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+# DEBUG = True
+# ALLOWED_HOSTS = []
+DEBUG = 'False'
+ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = (
@@ -139,7 +139,7 @@ EMAIL_FROM = '天天生鲜<islet1010@163.com>'  # 打开邮件显示在‘发件
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/3",
+        "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": ""
@@ -169,3 +169,5 @@ HAYSTACK_CONNECTIONS = {
 # 当添加、修改、删除了数据时，自动生成索引
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 5
+# 指定收集的静态文件保存在哪个目录下：
+STATIC_ROOT = '/home/python/Desktop/static'

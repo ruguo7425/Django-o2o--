@@ -1,4 +1,7 @@
 from django.db import models
+
+
+from django.db import models
 from tinymce.models import HTMLField
 
 from utils.models import BaseModel
@@ -24,7 +27,6 @@ class GoodsSPU(BaseModel):
     name = models.CharField(max_length=100, verbose_name="名称")
     # 实际开发改成 HTMLField: 第三方的富文本编辑器tinymce
     desc = HTMLField(verbose_name="商品描述", default="", blank=True)
-
     # desc = models.TextField(verbose_name="商品描述", default="", blank=True)
 
     def __str__(self):
@@ -51,8 +53,8 @@ class GoodsSKU(BaseModel):
     category = models.ForeignKey(GoodsCategory, verbose_name="类别")
     spu = models.ForeignKey(GoodsSPU, verbose_name="商品SPU")
 
-    def __str__(self):
-        return self.name
+    # def __str__(self):
+    #     return self.name
 
     class Meta:
         db_table = "df_goods_sku"
@@ -76,7 +78,9 @@ class GoodsImage(BaseModel):
 
 class IndexSlideGoods(BaseModel):
     """主页轮播商品展示"""
+    # FileField
     image = models.ImageField(upload_to="banner", verbose_name="图片")
+    # mysql 索引
     index = models.SmallIntegerField(default=0, verbose_name="顺序")
     sku = models.ForeignKey(GoodsSKU, verbose_name="商品SKU")
 
@@ -95,6 +99,7 @@ class IndexCategoryGoods(BaseModel):
         (0, "标题"),
         (1, "图片")
     )
+
     display_type = models.SmallIntegerField(choices=DISPLAY_TYPE_CHOICES,
                                             verbose_name="展示类型")
     index = models.SmallIntegerField(default=0, verbose_name="顺序")

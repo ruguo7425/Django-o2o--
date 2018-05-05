@@ -1,125 +1,124 @@
 import re
-
 from django.contrib.auth import authenticate, login, logout
 from django.core.mail import send_mail
+from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
-from django.views.generic.base import View
 from django.views.generic import View
 from django_redis import get_redis_connection
 from itsdangerous import TimedJSONWebSignatureSerializer, SignatureExpired
 from redis import StrictRedis
-
 from apps.goods.models import GoodsSKU
+from apps.orders.models import OrderInfo, OrderGoods
 from apps.users.models import User, Address
 from dailyfresh import settings
 from utils.LoginRequiredMixin import LoginRequiredMixin
+from celery_tasks.tasks import send_active_mail
 
 
 class RegisterView(View):
-    """类视图：处理注册"""
+    """注册视图"""
 
     def get(self, request):
-        """处理GET请求，返回注册页面"""
+        """进入注册界面 """
         return render(request, 'register.html')
 
-    # apps/users/RegisterView.py
-    from django.core.mail import send_mail
-
-    from dailyfresh import settings
-
-    @staticmethod
-    def send_active_email(username, receiver, token):
-        """发送激活邮件"""
-        subject = "天天生鲜用户激活"  # 标题, 不能为空，否则报错
-        message = ""  # 邮件正文(纯文本)
-        sender = settings.EMAIL_FROM  # 发件人
-        receivers = [receiver]  # 接收人, 需要是列表
-        # 邮件正文(带html样式)
-        html_message = ('<h3>尊敬的%s：感谢注册天天生鲜</h3>'
-                        '请点击以下链接激活您的帐号:<br/>'
-                        '<a href="http://127.0.0.1:8000/users/active/%s">'
-                        'http://127.0.0.1:8000/users/active/%s</a>'
-                        ) % (username, token, token)
-        send_mail(subject, message, sender, receivers,
-                  html_message=html_message)
-
     def post(self, request):
-        """处理POST请求，实现注册逻辑"""
-        # 获取请求参数
-        # 用户名, 密码, 确认密码, 邮箱, 勾选用户协议
+        """实现注册功能 """
+
+        # 获取post请求参数
         username = request.POST.get('username')
         password = request.POST.get('password')
         password2 = request.POST.get('password2')
         email = request.POST.get('email')
-        allow = request.POST.get('allow')  # 是否勾选的用户协议
+        allow = request.POST.get('allow')  # 用户协议， 勾选后得到：on
 
-        # 校验参数合法性
-        # 逻辑判断 0 0.0 '' None [] () {}  -> False
-        # all: 所有的变量都为True, all函数才返回True, 否则返回False
+        # todo: 校验参数合法性
+        # 判断参数不能为空
         if not all([username, password, password2, email]):
-            return render(request, 'register.html', {'message': '参数不完整'})
+            # return redirect('/users/register')
+            return render(request, 'register.html', {'errmsg': '参数不能为空'})
 
-        # 判断两次输入的密码是否正确
+        # 判断两次输入的密码一致
         if password != password2:
-            return render(request, 'register.html', {'message': '两次输入的密码不一致'})
+            return render(request, 'register.html', {'errmsg': '两次输入的密码不一致'})
 
-        # 判断是否勾选了用户协议
-        if allow != 'on':
-            return render(request, 'register.html', {'message': '请先同意用户协议'})
-
-        # 判断邮箱格式是否正确
+        # 判断邮箱合法
         if not re.match('^[a-z0-9][\w.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
-            return render(request, 'register.html', {'message': '邮箱格式不正确'})
+            return render(request, 'register.html', {'errmsg': '邮箱不合法'})
 
-        # 业务处理
-        # 保存用户到数据库中
-        # create_user: 是django提供的方法, 会对密码进行加密后再保存到数据库
+        # 判断是否勾选用户协议(勾选后得到：on)
+        if allow != 'on':
+            return render(request, 'register.html', {'errmsg': '请勾选用户协议'})
+
+        # 处理业务： 保存用户到数据库表中
+        # django提供的方法，会对密码进行加密
+        user = None
         try:
-            user = User.objects.create_user(username=username,
-                                            password=password,
-                                            email=email)
+            user = User.objects.create_user(username, email, password)  # type: User
+            # 修改用户状态为未激活
             user.is_active = False
             user.save()
         except IntegrityError:
-            return render(request, 'register.html', {'message': '用户名已存在'})
+            # 判断用户是否存在
+            return render(request, 'register.html', {'errmsg': '用户已存在'})
 
         # todo: 发送激活邮件
-
         token = user.generate_active_token()
-        RegisterView.send_active_email(username, email, token)
-        # 响应请求,返回html页面
-        return redirect(reverse("users:login"))
+        # 方式1：同步发送：如果网络卡的话会延迟,会阻塞
+        # RegisterView.send_active_mail(username, email, token)
+        # sleep(5)
+        # 方式2：使用celery异步发送：不会阻塞
+        # 会保存方法名参数等到Redis数据库中
+        send_active_mail.delay(username, email, token)
+
+        # 响应请求
+        return render(request, 'login.html')
+
+        # @staticmethod
+        # def send_active_mail(username, email, token):
+        #     """发送激活邮件"""
+        #     subject = '天天生鲜激活邮件'  # 标题，必须指定
+        #     message = ''  # 正文
+        #     from_email = settings.EMAIL_FROM  # 发件人
+        #     recipient_list = [email]  # 收件人
+        #     # 正文 （带有html样式）
+        #     html_message = ('<h3>尊敬的%s：感谢注册天天生鲜</h3>'
+        #                     '请点击以下链接激活您的帐号:<br/>'
+        #                     '<a href="http://127.0.0.1:8000/users/active/%s">'
+        #                     'http://127.0.0.1:8000/users/active/%s</a>'
+        #                     ) % (username, token, token)
+        #
+        #     send_mail(subject, message, from_email, recipient_list,
+        #               html_message=html_message)
 
 
 class ActiveView(View):
     def get(self, request, token: str):
         """
-        激活注册用户
+        用户激活
         :param request:
-        :param token: 对{'confirm':用户id}字典进行加密后的结果
+        :param token: 对字典 {'confirm':用户id} 进行加密后得到的字符串
         :return:
         """
-        # 解密数据，得到字典
-        dict_data = None
         try:
-            s = TimedJSONWebSignatureSerializer(
-                settings.SECRET_KEY, 3600 * 24)
-            dict_data = s.loads(token.encode())  # type: dict
+            # 解密token
+            s = TimedJSONWebSignatureSerializer(settings.SECRET_KEY)
+            # 字符串 -> bytes
+            # dict_data = s.loads(token.encode())
+            dict_data = s.loads(token)
         except SignatureExpired:
-            # 激活链接已经过期
-            return HttpResponse('激活链接已经过期')
+            # 判断是否失效
+            return HttpResponse('激活链接已经失效')
 
-        # 获取用id
+        # 获取用户id
         user_id = dict_data.get('confirm')
-
-        # 激活用户，修改表字段is_active=True
+        # 修改字段为已激活
         User.objects.filter(id=user_id).update(is_active=True)
-
         # 响应请求
-        return redirect(reverse("users:login"))
+        return HttpResponse('激活成功,请登录')
 
 
 class LoginView(View):
@@ -218,7 +217,7 @@ class UserInfoView(LoginRequiredMixin, View):
             # 'user': user,
             'which_page': 1,
             'address': address,
-            'skus':skus
+            'skus': skus
         }
 
         # 响应请求,返回html界面
@@ -226,11 +225,51 @@ class UserInfoView(LoginRequiredMixin, View):
 
 
 class UserOrderView(LoginRequiredMixin, View):
-    """用户中心人--订单显示界面"""
+    """
+    用户订单页
+    """
 
-    def get(self, request):
-        data = {'which_page': 2}
-        return render(request, 'user_center_order.html', data)
+    def get(self, request, page_num):
+        """显示订单列表界面"""
+
+        # 查询当前用户所有订单
+        orders = OrderInfo.objects.filter(
+            user=request.user).order_by('-create_time')
+
+        for order in orders:
+            # 查询某一订单下所有的订单商品
+            order_skus = OrderGoods.objects.filter(order=order)
+            for order_sku in order_skus:
+                # 计算商品的小计金额
+                amount = order_sku.price * order_sku.count
+                # 动态地给订单商品添加小计金额
+                order_sku.amount = amount
+
+            # 新增实例属性: 订单商品
+            order.order_skus = order_skus
+            # 新增实例属性: 实付金额
+            order.total_pay = order.total_amount + order.trans_cost
+            # 新增实例属性: 订单状态名称
+            order.status_desc = OrderInfo.ORDER_STATUS.get(order.status)
+
+        # 参数1: 所有分页数据
+        # 参数2: 每页显示多少条
+        paginator = Paginator(orders, 2)
+        try:
+            # 获取某一页数据
+            page = paginator.page(page_num)
+        except EmptyPage:
+            page = paginator.page(1)
+
+        # 定义模板显示的数据
+        context = {
+            'page': page,
+            'which_page': 2,
+            'page_range': paginator.page_range,
+        }
+
+        # 响应请求, 返回html界面
+        return render(request, 'user_center_order.html', context)
 
 
 class UserAddressView(LoginRequiredMixin, View):

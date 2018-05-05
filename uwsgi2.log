@@ -1,0 +1,23 @@
+*** Starting uWSGI 2.0.17 (64bit) on [Sat May  5 16:19:25 2018] ***
+compiled with version: 5.4.0 20160609 on 05 May 2018 03:55:56
+os: Linux-4.4.0-31-generic #50-Ubuntu SMP Wed Jul 13 00:07:12 UTC 2016
+nodename: ubuntu
+machine: x86_64
+clock source: unix
+pcre jit disabled
+detected number of CPU cores: 4
+current working directory: /home/python/Desktop/dailyfresh
+writing pidfile to uwsgi2.pid
+detected binary path: /home/python/.virtualenvs/django_py3/bin/uwsgi
+chdir() to /home/python/Desktop/dailyfresh
+your processes number limit is 8967
+your memory page size is 4096 bytes
+detected max file descriptor number: 1048576
+lock engine: pthread robust mutexes
+thunder lock: disabled (you can enable it with --thunder-lock)
+probably another instance of uWSGI is running on the same address (127.0.0.1:8082).
+bind(): Address already in use [core/socket.c line 769]
+
+
+
+

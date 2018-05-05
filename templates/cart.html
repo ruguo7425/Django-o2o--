@@ -20,7 +20,7 @@
         <li class="col06">操作</li>
     </ul>
 
-    <form method="post" action="#">
+    <form method="post" action="{% url 'orders:place' %}">
         {% csrf_token %}
 
         {% for sku in skus %}
@@ -55,7 +55,7 @@
             <li class="col03">合计(不含运费)：<span>¥</span>
                 <em>{{ total_amount }}</em><br>共计<b>{{ total_count }}</b>件商品
             </li>
-            <li class="col04"><input type="submit" value="去结算"/></li>
+            <li class="col04"><input type="submit" value="去结算" id="commit_btn"></li>
         </ul>
     </form>
 

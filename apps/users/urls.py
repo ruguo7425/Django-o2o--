@@ -11,7 +11,8 @@ urlpatterns = [
     url(r'^logout$', views.LogoutView.as_view(), name='logout'),  # 退出
 
     url(r'^address$', views.UserAddressView.as_view(), name='address'),  # 用户中心:地址
-    url(r'^orders$', views.UserOrderView.as_view(), name='orders'),  # 用户中心:订单
+    # url(r'^orders$', views.UserOrderView.as_view(), name='orders'),  # 用户中心:订单
     url(r'^info$', views.UserInfoView.as_view(), name='info'),  # 用户中心:个人信息
+    url(r'^orders/(\d+)$', views.UserOrderView.as_view(), name='orders'),  # 用户订单
 
 ]
